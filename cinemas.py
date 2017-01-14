@@ -23,12 +23,15 @@ def fetch_movie_info(movie_title):
     try:
         movie_page = requests.get(''.join([url, movie_title]),
                                   proxies={"http": random.choice(proxy_list)}, timeout=timeout).content
+        soup = BeautifulSoup(movie_page, 'html.parser')
+        rating_ball = soup.find('span', 'rating_ball').text
+        rating_count = soup.find('span', 'ratingCount').text
+        return rating_ball, rating_count
     except requests.exceptions.ConnectionError:
         return None, None
-    soup = BeautifulSoup(movie_page, 'html.parser')
-    rating_ball = soup.find('span', 'rating_ball').text
-    rating_count = soup.find('span', 'ratingCount').text
-    return rating_ball, rating_count
+    except AttributeError:
+        return None, None
+
 
 
 def make_movies_list(movies, cinema_count=10):
