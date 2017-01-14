@@ -51,8 +51,9 @@ def output_movies_to_console(movies_list, top_count=10):
 
 
 if __name__ == '__main__':
-    proxy_list = requests.get("http://www.freeproxy-list.ru/api/proxy",
-                              params={'anonymity': 'true', 'token': 'demo'}).text.split('\n')
+    proxy_url = "http://www.freeproxy-list.ru/api/proxy"
+    proxy_params = {'anonymity': 'true', 'token': 'demo'}
+    proxy_list = requests.get(proxy_url, params=proxy_params).text.split('\n')
     movies = parse_afisha_list(fetch_afisha_page())
     movies_list = make_movies_list(movies)
     output_movies_to_console(movies_list)
