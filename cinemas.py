@@ -27,9 +27,11 @@ def fetch_movie_info(movie_title):
         rating_ball = soup.find('span', 'rating_ball').text
         rating_count = soup.find('span', 'ratingCount').text
         return rating_ball, rating_count
-    except requests.exceptions.ConnectionError:
-        return None, None
-    except AttributeError:
+    except (AttributeError,
+            requests.exceptions.ConnectTimeout,
+            requests.exceptions.ConnectionError,
+            requests.exceptions.ProxyError,
+            requests.exceptions.ReadTimeout):
         return None, None
 
 
