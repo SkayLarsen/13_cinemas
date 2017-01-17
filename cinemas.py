@@ -11,39 +11,45 @@ def fetch_afisha_page():
 def parse_afisha_list(raw_html):
     soup = BeautifulSoup(raw_html, 'html.parser')
     movies = soup.find_all('div', 'm-disp-table')
-    return [
-        (movie.find('a').text,  # название
-         len(movie.parent.find_all('td', 'b-td-item')))  # количество кинотеатров
-        for movie in movies]
+    return [{
+                'title': movie.find('a').text,
+                'cinemas': len(movie.parent.find_all('td', 'b-td-item'))}
+            for movie in movies]
 
 
 def fetch_movie_info(movie_title):
     timeout = 10
     url = 'https://www.kinopoisk.ru/index.php?first=yes&what=&kp_query='
     try:
-        movie_page = requests.get(''.join([url, movie_title]),
-                                  proxies={"http": random.choice(proxy_list)}, timeout=timeout).content
-        soup = BeautifulSoup(movie_page, 'html.parser')
-        rating_ball = soup.find('span', 'rating_ball').text
-        rating_count = soup.find('span', 'ratingCount').text
-        return rating_ball, rating_count
-    except (AttributeError,
-            requests.exceptions.ConnectTimeout,
+        return requests.get(''.join([url, movie_title]),
+                            proxies={"http": random.choice(proxy_list)}, timeout=timeout).content
+    except (requests.exceptions.ConnectTimeout,
             requests.exceptions.ConnectionError,
             requests.exceptions.ProxyError,
             requests.exceptions.ReadTimeout):
-        return None, None
+        return None
 
 
+def parse_kinopoisk_page(page):
+    try:
+        soup = BeautifulSoup(page, 'html.parser')
+        return {
+            'ball': soup.find('span', 'rating_ball').text,
+            'count': soup.find('span', 'ratingCount').text
+        }
+    except (AttributeError, TypeError, ValueError):
+        return None
 
-def make_movies_list(movies, cinema_count=10):
-    movies = filter(lambda movie: movie[1] >= cinema_count, movies)
+
+def make_movies_list(movies, minimal_popularity=10):
+    movies = filter(lambda movie: movie['cinemas'] >= minimal_popularity, movies)
     movies_list = []
-    for movie, cinemas in movies:
-        rating_ball, rating_count = fetch_movie_info(movie)
-        if rating_ball is None or rating_count is None:
-            rating_ball, rating_count = 0, 0
-        movies_list.append((movie, rating_ball, rating_count, cinemas))
+    for movie in movies:
+        info = fetch_movie_info(movie['title'])
+        rating = parse_kinopoisk_page(info)
+        if rating is None:
+            rating = {'ball': 0, 'count': 0}
+        movies_list.append((movie['title'], rating['ball'], rating['count'], movie['cinemas']))
     return movies_list
 
 
